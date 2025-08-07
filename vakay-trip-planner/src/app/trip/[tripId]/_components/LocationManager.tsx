@@ -6,7 +6,7 @@ import { Database } from '@/types/database.types';
 import { useState } from 'react';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
-import { addLocation } from '../actions';
+import { addLocation, deleteLocation } from '../actions';
 
 type Location = Database['public']['Tables']['locations']['Row'];
 
@@ -115,15 +115,30 @@ export function LocationManager({ tripId, locations }: LocationManagerProps) {
       <div className="mt-6 space-y-2">
         <h3 className="text-md font-semibold">Defined Locations:</h3>
         {locations.length > 0 ? (
-          locations.map((loc) => (
-            <div key={loc.id} className="flex items-center gap-3 rounded-md border p-2">
-              <div
-                className="h-6 w-6 rounded-full border"
-                style={{ backgroundColor: loc.color }}
-              ></div>
-              <span className="font-medium">{loc.name}</span>
-            </div>
-          ))
+          <ul className="divide-y divide-gray-200">
+            {locations.map((loc) => (
+              <li key={loc.id} className="flex items-center justify-between py-2">
+                <div className="flex items-center gap-3">
+                  <div
+                    className="h-6 w-6 flex-shrink-0 rounded-full border"
+                    style={{ backgroundColor: loc.color }}
+                  ></div>
+                  <span className="font-medium">{loc.name}</span>
+                </div>
+
+                {/* --- NEW: Delete button form --- */}
+                <form action={deleteLocation.bind(null, loc.id, tripId)}>
+                  <button
+                    type="submit"
+                    className="text-xs text-red-500 hover:text-red-700"
+                    aria-label={`Delete ${loc.name}`}
+                  >
+                    Remove
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
         ) : (
           <p className="text-sm text-gray-500">No locations defined yet.</p>
         )}

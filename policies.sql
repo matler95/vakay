@@ -100,3 +100,16 @@ ON public.itinerary_days FOR UPDATE TO authenticated USING (
     WHERE trip_participants.trip_id = itinerary_days.trip_id AND trip_participants.user_id = auth.uid()
   )
 );
+
+-- POLICY 3: Allow participants to DELETE locations for a trip they are on.
+CREATE POLICY "Allow participants to delete trip locations"
+ON public.locations
+FOR DELETE
+TO authenticated
+USING (
+  EXISTS (
+    SELECT 1
+    FROM public.trip_participants
+    WHERE trip_participants.trip_id = locations.trip_id AND trip_participants.user_id = auth.uid()
+  )
+);

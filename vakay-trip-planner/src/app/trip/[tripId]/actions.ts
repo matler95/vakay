@@ -5,7 +5,7 @@ import { createServerActionClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { redirect } from 'next/navigation'; // Make sure this import is present
+import { redirect } from 'next/navigation';
 
 // --- FIX: Add the 'prevState' argument back to the function signature ---
 export async function saveItineraryDay(prevState: any, formData: FormData) {
@@ -84,4 +84,24 @@ export async function addLocation(prevState: any, formData: FormData) {
 
   revalidatePath(`/trip/${validatedFields.data.trip_id}`);
   return { message: 'Location added!' };
+}
+
+
+export async function deleteLocation(locationId: number, tripId: string) {
+  const supabase = createServerActionClient({ cookies });
+
+  // The RLS policy we created ensures only valid users can perform this action.
+  const { error } = await supabase
+    .from('locations')
+    .delete()
+    .eq('id', locationId);
+
+  if (error) {
+    console.error('Delete Error:', error);
+    // In a real app, you might want to return an error message to the user.
+    return;
+  }
+
+  // Refresh the data on the trip page.
+  revalidatePath(`/trip/${tripId}`);
 }
