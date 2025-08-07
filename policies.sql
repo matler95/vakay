@@ -113,3 +113,13 @@ USING (
     WHERE trip_participants.trip_id = locations.trip_id AND trip_participants.user_id = auth.uid()
   )
 );
+
+
+
+-- Add a policy to allow trip admins to update a trip's details.
+CREATE POLICY "Allow admins to update their trip"
+ON public.trips
+FOR UPDATE
+TO authenticated
+USING ( get_user_role_on_trip(id) = 'admin' )
+WITH CHECK ( get_user_role_on_trip(id) = 'admin' );

@@ -7,6 +7,7 @@ import { ItineraryView } from './_components/ItineraryView';
 import { LocationManager } from './_components/LocationManager'; // Import the new component
 import { ParticipantManager } from './_components/ParticipantManager'; // Import the new component
 import { type Participant } from './_components/ParticipantManager';
+import { EditTripForm } from './_components/EditTripForm'; // Import the new component
 
 export const dynamic = 'force-dynamic';
 
@@ -57,13 +58,27 @@ if (count === 0) { notFound(); }
     .from('trip_participants')
     .select('role, profiles!user_id(id, full_name)') // This is the correct syntax
     .eq('trip_id', tripId);
+  
+    // --- NEW: Fetch the current user's role for this trip ---
+  const { data: participantRole } = await supabase
+    .from('trip_participants')
+    .select('role')
+    .eq('trip_id', tripId)
+    .eq('user_id', user.id)
+    .single();
 
   return (
     <div className="mx-auto max-w-7xl">
-      <h1 className="text-3xl font-bold text-gray-900">{trip.name}</h1>
-      <p className="text-lg text-gray-500 mt-1">
-        Your itinerary for {trip.destination || 'your upcoming trip'}.
-      </p>
+      <div className="flex items-baseline justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">{trip.name}</h1>
+          <p className="mt-1 text-lg text-gray-500">
+            Your itinerary for {trip.destination || 'your upcoming trip'}.
+          </p>
+        </div>
+        {/* --- NEW: Render the Edit Trip Form --- */}
+        <EditTripForm trip={trip} userRole={participantRole?.role || null} />
+      </div>
       
       {/* --- MODIFIED: Add the 'as any' type assertion --- */}
       <ParticipantManager tripId={trip.id} participants={participants as any || []} />
