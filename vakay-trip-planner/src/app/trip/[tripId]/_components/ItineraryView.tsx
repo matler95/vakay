@@ -42,7 +42,7 @@ export function ItineraryView({ trip, itineraryDays, locations }: ItineraryViewP
           const dayData = itineraryMap.get(date.toISOString().split('T')[0]);
           return (
             <DayCard
-              key={`${date.toISOString()}-${dayData?.location_1_id}-${dayData?.notes}`}
+              key={`${date.toISOString()}-${dayData?.location_1_id}-${dayData?.location_2_id}-${dayData?.notes}`}
               date={date}
               tripId={trip.id}
               dayData={dayData}

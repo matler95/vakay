@@ -7,27 +7,31 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { redirect } from 'next/navigation'; // Make sure this import is present
 
-// MODIFIED: The function signature has changed.
 export async function saveItineraryDay(formData: FormData) {
   const supabase = createServerActionClient({ cookies });
 
+  // --- MODIFIED SCHEMA ---
   const schema = z.object({
     trip_id: z.string().uuid(),
     date: z.string().date(),
     notes: z.string().optional(),
     location_1_id: z.string().optional(),
+    location_2_id: z.string().optional(), // <-- ADD THIS
   });
 
   const validatedFields = schema.safeParse(Object.fromEntries(formData.entries()));
 
-  // We can't return a message anymore, so we'll just log errors.
   if (!validatedFields.success) {
     console.error('Invalid data:', validatedFields.error.flatten().fieldErrors);
     return;
   }
 
-  const locationId = validatedFields.data.location_1_id
+  // --- HANDLE BOTH LOCATION IDs ---
+  const location1Id = validatedFields.data.location_1_id
     ? Number(validatedFields.data.location_1_id)
+    : null;
+  const location2Id = validatedFields.data.location_2_id
+    ? Number(validatedFields.data.location_2_id)
     : null;
 
   const { trip_id, date, notes } = validatedFields.data;
@@ -37,7 +41,8 @@ export async function saveItineraryDay(formData: FormData) {
       trip_id,
       date,
       notes,
-      location_1_id: locationId,
+      location_1_id: location1Id,
+      location_2_id: location2Id, // <-- ADD THIS
     },
     { onConflict: 'trip_id, date' }
   );
@@ -47,10 +52,9 @@ export async function saveItineraryDay(formData: FormData) {
     return;
   }
 
-  // The revalidatePath call is still crucial.
   revalidatePath(`/trip/${trip_id}`);
-  // We no longer return a state object.
 }
+
 
 
 export async function addLocation(prevState: any, formData: FormData) {
