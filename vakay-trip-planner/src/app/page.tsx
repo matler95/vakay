@@ -1,23 +1,8 @@
-// The full and correct code for: vakay-trip-planner\src\app\page.tsx
-
-import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { Database } from '@/types/database.types';
+// src/app/page.tsx
+// All server-side redirect logic has been removed and is now in middleware.
 import LoginForm from './_components/LoginForm';
 
-export default async function LoginPage() {
-  const supabase = createServerComponentClient<Database>({ cookies });
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
-  // If the user is already logged in, redirect them to the dashboard
-  if (session) {
-    redirect('/dashboard');
-  }
-
-  // If not logged in, show the login form component
+export default function LoginPage() {
+  // This page is now only responsible for displaying the login form.
   return <LoginForm />;
 }
