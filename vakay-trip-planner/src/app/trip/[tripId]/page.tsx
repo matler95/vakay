@@ -3,7 +3,8 @@ import { createServerComponentClient } from '@supabase/auth-helpers-nextjs';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Database } from '@/types/database.types';
-import { ItineraryView } from './_components/ItineraryView'; // Import the new component
+import { ItineraryView } from './_components/ItineraryView';
+import { LocationManager } from './_components/LocationManager'; // Import the new component
 
 export const dynamic = 'force-dynamic';
 
@@ -20,15 +21,15 @@ export default async function TripPage({ params }: TripPageProps) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) { notFound(); }
 
-  // Security check remains the same
+  // Security check ... (no changes here)
   const { count } = await supabase
     .from('trip_participants')
     .select('*', { count: 'exact', head: true })
     .eq('trip_id', tripId)
     .eq('user_id', user.id);
-  if (count === 0) { notFound(); }
+if (count === 0) { notFound(); }
 
-  // Fetch trip data remains the same
+  // Fetch trip data ... (no changes here)
   const { data: trip } = await supabase
     .from('trips')
     .select('*')
@@ -36,11 +37,18 @@ export default async function TripPage({ params }: TripPageProps) {
     .single();
   if (!trip) { notFound(); }
 
-  // --- NEW: Fetch all existing itinerary day data for this trip ---
+  // Fetch itinerary days ... (no changes here)
   const { data: itineraryDays } = await supabase
     .from('itinerary_days')
     .select('*')
     .eq('trip_id', tripId);
+
+  // --- NEW: Fetch all locations for this trip ---
+  const { data: locations } = await supabase
+    .from('locations')
+    .select('*')
+    .eq('trip_id', tripId)
+    .order('name');
 
   return (
     <div className="mx-auto max-w-7xl">
@@ -49,8 +57,15 @@ export default async function TripPage({ params }: TripPageProps) {
         Your itinerary for {trip.destination || 'your upcoming trip'}.
       </p>
       
-      {/* Replace the placeholder with our new ItineraryView component */}
-      <ItineraryView trip={trip} itineraryDays={itineraryDays || []} />
+      {/* --- MODIFIED: Pass the locations prop --- */}
+      <ItineraryView
+        trip={trip}
+        itineraryDays={itineraryDays || []}
+        locations={locations || []}
+      />
+
+      {/* --- NEW: Render the Location Manager --- */}
+      <LocationManager tripId={trip.id} locations={locations || []} />
     </div>
   );
 }
