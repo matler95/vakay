@@ -2,6 +2,8 @@
 'use client';
 
 import { Database } from '@/types/database.types';
+// --- NEW: Import useState for managing the color selection ---
+import { useState } from 'react';
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { addLocation } from '../actions';
@@ -12,6 +14,16 @@ interface LocationManagerProps {
   tripId: string;
   locations: Location[];
 }
+
+// --- NEW: Define the array of preset colors ---
+const presetColors = [
+  { name: 'Red', hex: '#FF383C' }, { name: 'Orange', hex: '#FF8D28' },
+  { name: 'Yellow', hex: '#FFCC00' }, { name: 'Green', hex: '#34C759' },
+  { name: 'Mint', hex: '#00C8B3' }, { name: 'Teal', hex: '#00C3D0' },
+  { name: 'Cyan', hex: '#00C0E8' }, { name: 'Blue', hex: '#0088FF' },
+  { name: 'Indigo', hex: '#6155F5' }, { name: 'Purple', hex: '#CB30E0' },
+  { name: 'Pink', hex: '#FF2D55' }, { name: "Brown", hex: "#AC7F5E" }, { name: "Gray", hex: "#8E8E93" }
+];
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -29,15 +41,21 @@ function SubmitButton() {
 export function LocationManager({ tripId, locations }: LocationManagerProps) {
   const [state, formAction] = useActionState(addLocation, { message: '' });
 
+  // --- NEW: State to manage the selected color and custom picker visibility ---
+  const [selectedColor, setSelectedColor] = useState(presetColors[7].hex); // Default to Blue
+  const [isCustom, setIsCustom] = useState(false);
+
   return (
     <div className="mt-8 rounded-lg bg-white p-6 shadow-md">
       <h2 className="text-xl font-semibold">Locations</h2>
       <p className="mt-1 text-sm text-gray-500">Define places for your trip and give them a color.</p>
       
-      {/* Form to add a new location */}
-      <form action={formAction} className="mt-4 flex items-end gap-4">
+      <form action={formAction} className="mt-4 space-y-4">
         <input type="hidden" name="trip_id" value={tripId} />
-        <div className="flex-grow">
+        {/* This hidden input sends the actual selected color hex code to the server */}
+        <input type="hidden" name="color" value={selectedColor} />
+        
+        <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-900">Location Name</label>
           <input
             type="text"
@@ -48,18 +66,48 @@ export function LocationManager({ tripId, locations }: LocationManagerProps) {
             placeholder="e.g., Paris"
           />
         </div>
+
+        {/* --- NEW: The refined color selection UI --- */}
         <div>
-          <label htmlFor="color" className="block text-sm font-medium text-gray-900">Color</label>
-          {/* This input provides a native color picker */}
-          <input
-            type="color"
-            id="color"
-            name="color"
-            defaultValue="#3B82F6" // A nice default blue
-            className="mt-1 h-10 w-14 cursor-pointer rounded-md border-gray-300 bg-white"
-          />
+          <label className="block text-sm font-medium text-gray-900">Color</label>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {presetColors.map((color) => (
+              <button
+                type="button"
+                key={color.name}
+                onClick={() => {
+                  setSelectedColor(color.hex);
+                  setIsCustom(false);
+                }}
+                className={`h-8 w-8 rounded-full border-2 ${selectedColor === color.hex && !isCustom ? 'border-indigo-600' : 'border-transparent'}`}
+                style={{ backgroundColor: color.hex }}
+                aria-label={color.name}
+              />
+            ))}
+            {/* The "Custom" button */}
+            <button
+              type="button"
+              onClick={() => setIsCustom(true)}
+              className={`flex h-8 w-8 items-center justify-center rounded-full border-2 bg-gray-100 ${isCustom ? 'border-indigo-600' : 'border-transparent'}`}
+              aria-label="Custom Color"
+            >
+              🎨
+            </button>
+            {/* The color picker, which only shows up if 'Custom' is selected */}
+            {isCustom && (
+              <input
+                type="color"
+                value={selectedColor}
+                onChange={(e) => setSelectedColor(e.target.value)}
+                className="h-10 w-14 cursor-pointer rounded-md border-gray-300 bg-white"
+              />
+            )}
+          </div>
         </div>
-        <SubmitButton />
+        
+        <div className="flex justify-end">
+          <SubmitButton />
+        </div>
       </form>
       {state?.message && <p className="mt-2 text-sm text-green-600">{state.message}</p>}
 
