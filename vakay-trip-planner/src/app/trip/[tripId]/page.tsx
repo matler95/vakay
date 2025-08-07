@@ -43,7 +43,7 @@ export default async function TripPage({ params }: TripPageProps) {
     .eq('trip_id', tripId);
 
   return (
-    <div>
+    <div className="mx-auto max-w-7xl">
       <h1 className="text-3xl font-bold text-gray-900">{trip.name}</h1>
       <p className="text-lg text-gray-500 mt-1">
         Your itinerary for {trip.destination || 'your upcoming trip'}.

@@ -15,7 +15,7 @@ export default async function AppLayout({
           <LogoutButton />
         </nav>
       </header>
-      <main className="container mx-auto px-4 py-8 lg:px-8">
+      <main className="px-4 py-8 lg:px-8">
         {children}
       </main>
     </div>

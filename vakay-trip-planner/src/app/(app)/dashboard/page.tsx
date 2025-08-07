@@ -29,7 +29,7 @@ export default async function Dashboard() {
   const trips = tripsData?.map(item => item.trips).filter(Boolean) ?? [];
 
   return (
-    <div>
+    <div className="container mx-auto">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800">Your Trips</h2>
         <p className="text-gray-500">View your existing trips or create a new one to get started.</p>
