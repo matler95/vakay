@@ -6,12 +6,12 @@ import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { inviteUser } from '../actions';
 
-type Participant = {
+export type Participant = {
   role: string | null;
   profiles: {
     id: string;
     full_name: string | null;
-  } | null;
+  };
 }
 
 interface ParticipantManagerProps {

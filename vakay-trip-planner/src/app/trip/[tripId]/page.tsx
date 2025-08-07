@@ -6,6 +6,7 @@ import { Database } from '@/types/database.types';
 import { ItineraryView } from './_components/ItineraryView';
 import { LocationManager } from './_components/LocationManager'; // Import the new component
 import { ParticipantManager } from './_components/ParticipantManager'; // Import the new component
+import { type Participant } from './_components/ParticipantManager';
 
 export const dynamic = 'force-dynamic';
 
@@ -54,7 +55,7 @@ if (count === 0) { notFound(); }
   // --- NEW: Fetch all participants and their profile info for this trip ---
   const { data: participants } = await supabase
     .from('trip_participants')
-    .select('role, profiles(id, full_name)') // Join with profiles table
+    .select('role, profiles!user_id(id, full_name)') // This is the correct syntax
     .eq('trip_id', tripId);
 
   return (
@@ -64,9 +65,9 @@ if (count === 0) { notFound(); }
         Your itinerary for {trip.destination || 'your upcoming trip'}.
       </p>
       
-      {/* --- NEW: Render the Participant Manager --- */}
-      <ParticipantManager tripId={trip.id} participants={participants || []} />
-      
+      {/* --- MODIFIED: Add the 'as any' type assertion --- */}
+      <ParticipantManager tripId={trip.id} participants={participants as any || []} />
+
       {/* --- MODIFIED: Pass the locations prop --- */}
       <ItineraryView
         trip={trip}
