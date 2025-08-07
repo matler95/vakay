@@ -7,23 +7,25 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { redirect } from 'next/navigation'; // Make sure this import is present
 
-export async function saveItineraryDay(formData: FormData) {
+// --- FIX: Add the 'prevState' argument back to the function signature ---
+export async function saveItineraryDay(prevState: any, formData: FormData) {
   const supabase = createServerActionClient({ cookies });
 
-  // --- MODIFIED SCHEMA ---
   const schema = z.object({
     trip_id: z.string().uuid(),
     date: z.string().date(),
     notes: z.string().optional(),
     location_1_id: z.string().optional(),
-    location_2_id: z.string().optional(), // <-- ADD THIS
+    location_2_id: z.string().optional(),
   });
 
+  // This line will now work correctly
   const validatedFields = schema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
     console.error('Invalid data:', validatedFields.error.flatten().fieldErrors);
-    return;
+    // Return a state object on failure
+    return { message: 'Invalid data submitted.' };
   }
 
   // --- HANDLE BOTH LOCATION IDs ---
@@ -49,10 +51,12 @@ export async function saveItineraryDay(formData: FormData) {
 
   if (error) {
     console.error('Upsert Error:', error);
-    return;
+    return { message: `Failed to save day: ${error.message}` };
   }
 
   revalidatePath(`/trip/${trip_id}`);
+  // Return the success message for the useEffect hook
+  return { message: 'Saved!' };
 }
 
 
