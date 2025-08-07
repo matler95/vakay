@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { Database } from '@/types/database.types';
 import { ItineraryView } from './_components/ItineraryView';
 import { LocationManager } from './_components/LocationManager'; // Import the new component
+import { ParticipantManager } from './_components/ParticipantManager'; // Import the new component
 
 export const dynamic = 'force-dynamic';
 
@@ -50,12 +51,21 @@ if (count === 0) { notFound(); }
     .eq('trip_id', tripId)
     .order('name');
 
+  // --- NEW: Fetch all participants and their profile info for this trip ---
+  const { data: participants } = await supabase
+    .from('trip_participants')
+    .select('role, profiles(id, full_name)') // Join with profiles table
+    .eq('trip_id', tripId);
+
   return (
     <div className="mx-auto max-w-7xl">
       <h1 className="text-3xl font-bold text-gray-900">{trip.name}</h1>
       <p className="text-lg text-gray-500 mt-1">
         Your itinerary for {trip.destination || 'your upcoming trip'}.
       </p>
+      
+      {/* --- NEW: Render the Participant Manager --- */}
+      <ParticipantManager tripId={trip.id} participants={participants || []} />
       
       {/* --- MODIFIED: Pass the locations prop --- */}
       <ItineraryView

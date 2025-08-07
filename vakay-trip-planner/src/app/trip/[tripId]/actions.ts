@@ -6,6 +6,7 @@ import { cookies } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { redirect } from 'next/navigation';
+import { createClient } from '@supabase/supabase-js';
 
 // --- FIX: Add the 'prevState' argument back to the function signature ---
 export async function saveItineraryDay(prevState: any, formData: FormData) {
@@ -104,4 +105,57 @@ export async function deleteLocation(locationId: number, tripId: string) {
 
   // Refresh the data on the trip page.
   revalidatePath(`/trip/${tripId}`);
+}
+
+
+// --- ADD THIS NEW FUNCTION ---
+export async function inviteUser(prevState: any, formData: FormData) {
+  const tripId = formData.get('trip_id') as string;
+  const email = formData.get('email') as string;
+
+  // Create a regular client to check the current user's permissions
+  const supabase = createServerActionClient({ cookies });
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { message: 'Not authenticated.' };
+
+  // Check if the current user is an admin of this trip
+  const { data: participant } = await supabase
+    .from('trip_participants')
+    .select('role')
+    .eq('trip_id', tripId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (participant?.role !== 'admin') {
+    return { message: 'You do not have permission to invite users.' };
+  }
+  
+  // Create a special admin client to invite users
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+
+  // Invite the user by email
+  const { data: invitedUser, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email);
+
+  if (inviteError) {
+    return { message: `Error inviting user: ${inviteError.message}` };
+  }
+
+  // Add the invited user to the trip_participants table
+  const { error: addError } = await supabase
+    .from('trip_participants')
+    .insert({
+      trip_id: tripId,
+      user_id: invitedUser.user.id,
+      role: 'traveler', // Invited users are travelers by default
+    });
+  
+  if (addError) {
+    return { message: `Error adding user to trip: ${addError.message}` };
+  }
+
+  revalidatePath(`/trip/${tripId}`);
+  return { message: `Invitation sent to ${email}!` };
 }
