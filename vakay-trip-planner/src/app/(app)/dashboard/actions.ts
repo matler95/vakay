@@ -69,3 +69,25 @@ export async function createTrip(prevState: { message: string }, formData: FormD
   revalidatePath('/dashboard');
   redirect(`/trip/${trip.id}`); // We will build this page later
 }
+
+// --- ADD THIS NEW FUNCTION ---
+export async function deleteTrip(tripId: string) {
+  const supabase = createServerActionClient({ cookies });
+  
+  // RLS policy ensures only an admin can perform this delete.
+  // The ON DELETE CASCADE rule in our database will automatically delete
+  // all related locations, participants, and itinerary days.
+  const { error } = await supabase
+    .from('trips')
+    .delete()
+    .eq('id', tripId);
+
+  if (error) {
+    console.error('Delete Trip Error:', error);
+    // In a real app, you'd want to return an error message.
+    return;
+  }
+
+  // Refresh the dashboard to show the trip has been removed.
+  revalidatePath('/dashboard');
+}

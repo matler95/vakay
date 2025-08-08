@@ -160,10 +160,7 @@ export async function inviteUser(prevState: any, formData: FormData) {
   return { message: `Invitation sent to ${email}!` };
 }
 
-// --- ADD THIS NEW FUNCTION ---
 export async function updateTripDetails(prevState: any, formData: FormData) {
-  const tripId = formData.get('trip_id') as string;
-
   const schema = z.object({
     trip_id: z.string().uuid(),
     name: z.string().min(3, { message: 'Trip name must be at least 3 characters.' }),
@@ -177,18 +174,20 @@ export async function updateTripDetails(prevState: any, formData: FormData) {
   if (!validatedFields.success) {
     return { message: 'Invalid data provided.' };
   }
+  
+  // --- FIX: Separate the ID from the data we want to update ---
+  const { trip_id, ...updateData } = validatedFields.data;
 
   const supabase = createServerActionClient({ cookies });
 
-  // Our RLS policy handles the security, but it's good practice
-  // to double-check permissions in the action itself.
+  // Security check for admin role remains the same...
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return { message: 'Not authenticated.' };
 
   const { data: participant } = await supabase
     .from('trip_participants')
     .select('role')
-    .eq('trip_id', tripId)
+    .eq('trip_id', trip_id)
     .eq('user_id', user.id)
     .single();
 
@@ -196,16 +195,16 @@ export async function updateTripDetails(prevState: any, formData: FormData) {
     return { message: 'You do not have permission to edit this trip.' };
   }
   
-  // If security check passes, update the trip
+  // --- FIX: Use the separated data for the update ---
   const { error } = await supabase
     .from('trips')
-    .update(validatedFields.data)
-    .eq('id', tripId);
+    .update(updateData) // Use the object without trip_id
+    .eq('id', trip_id);  // Use trip_id to find the correct row
   
   if (error) {
     return { message: `Failed to update trip: ${error.message}` };
   }
   
-  revalidatePath(`/trip/${tripId}`);
+  revalidatePath(`/trip/${trip_id}`);
   return { message: 'Trip details updated successfully!' };
 }

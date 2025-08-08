@@ -57,3 +57,6 @@ CREATE TABLE trip_participants (
 );
 -- Enable Row Level Security
 ALTER TABLE trip_participants ENABLE ROW LEVEL SECURITY;
+
+ALTER TABLE public.profiles
+ADD COLUMN has_set_password BOOLEAN DEFAULT FALSE;

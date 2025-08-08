@@ -10,42 +10,42 @@ import { TripList } from './_components/TripList';
 export default async function Dashboard() {
   const supabase = createServerComponentClient<Database>({ cookies });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) { redirect('/'); }
 
-  if (!user) {
-    redirect('/'); // Should already be handled by layout, but good practice
-  }
-
-  // Fetch trips where the current user is a participant
-  const { data: tripsData, error } = await supabase
+  // --- MODIFIED: Fetch trips AND the user's role for each trip ---
+  const { data: tripsData } = await supabase
     .from('trip_participants')
-    .select('trips(*)') // This is the magic! Fetches all columns from the related 'trips' table
+    .select('role, trips(*)') // Select the role from this table, and all trip data
     .eq('user_id', user.id);
   
-  // The result is an array of objects, where each object has a 'trips' property.
-  // We need to extract just the trip details.
-  const trips = tripsData?.map(item => item.trips).filter(Boolean) ?? [];
+  // Combine the role and trip data into a single object for easier use
+  const trips = tripsData?.map(item => ({
+    ...(item.trips as Trip), // Spread all properties of the trip object
+    user_role: item.role, // Add the user_role property
+  })) ?? [];
 
   return (
     <div className="container mx-auto">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-gray-800">Your Trips</h2>
-        <p className="text-gray-500">View your existing trips or create a new one to get started.</p>
+        <p className="text-gray-500">Select a trip to view its itinerary or create a new one.</p>
       </div>
 
       <div className="grid grid-cols-1 gap-12 md:grid-cols-2">
         <div className="order-2 md:order-1">
-          {/* We're replacing the placeholder with our new TripList component */}
+          {/* Pass the new, combined trip data to the list */}
           <TripList trips={trips as any} />
         </div>
 
-        <div className="order-1 md:order-2 bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-semibold mb-4 text-gray-800">Create a New Trip</h3>
+        <div className="order-1 md:order-2 rounded-lg bg-white p-6 shadow-md">
+          <h3 className="mb-4 text-lg font-semibold text-gray-800">Create a New Trip</h3>
           <CreateTripForm />
         </div>
       </div>
     </div>
   );
 }
+
+// Add the Trip type definition here for clarity
+type Trip = Database['public']['Tables']['trips']['Row'];

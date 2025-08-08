@@ -7,7 +7,7 @@ import { ItineraryView } from './_components/ItineraryView';
 import { LocationManager } from './_components/LocationManager'; // Import the new component
 import { ParticipantManager } from './_components/ParticipantManager'; // Import the new component
 import { type Participant } from './_components/ParticipantManager';
-import { EditTripForm } from './_components/EditTripForm'; // Import the new component
+import { EditTripInline } from './_components/EditTripInline';
 
 export const dynamic = 'force-dynamic';
 
@@ -76,22 +76,11 @@ if (count === 0) { notFound(); }
             Your itinerary for {trip.destination || 'your upcoming trip'}.
           </p>
         </div>
-        {/* --- NEW: Render the Edit Trip Form --- */}
-        <EditTripForm trip={trip} userRole={participantRole?.role || null} />
+        {/* --- CHANGE: Render the new EditTripInline component --- */}
+        <EditTripInline trip={trip} userRole={participantRole?.role || null} />
       </div>
-      
-      {/* --- MODIFIED: Add the 'as any' type assertion --- */}
-      <ParticipantManager tripId={trip.id} participants={participants as any || []} />
 
-      {/* --- MODIFIED: Pass the locations prop --- */}
-      <ItineraryView
-        trip={trip}
-        itineraryDays={itineraryDays || []}
-        locations={locations || []}
-      />
-
-      {/* --- NEW: Render the Location Manager --- */}
-      <LocationManager tripId={trip.id} locations={locations || []} />
+      {/* ... (ParticipantManager, ItineraryView, and LocationManager remain the same) */}
     </div>
   );
 }

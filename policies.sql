@@ -123,3 +123,23 @@ FOR UPDATE
 TO authenticated
 USING ( get_user_role_on_trip(id) = 'admin' )
 WITH CHECK ( get_user_role_on_trip(id) = 'admin' );
+
+
+-- Drop the old policy that was too strict for trip creation
+DROP POLICY IF EXISTS "Allow admins to add participants to their trip" ON public.trip_participants;
+
+-- Create the new policy that handles both creating a trip and inviting others
+CREATE POLICY "Allow participant management by self-add or admin role"
+ON public.trip_participants
+FOR INSERT
+WITH CHECK (
+  (auth.uid() = user_id) OR (get_user_role_on_trip(trip_id) = 'admin')
+);
+
+
+-- Add a policy to allow trip admins to delete a trip.
+CREATE POLICY "Allow admins to delete their trip"
+ON public.trips
+FOR DELETE
+TO authenticated
+USING ( get_user_role_on_trip(id) = 'admin' );
