@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { redirect } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
 
-// --- FIX: Add the 'prevState' argument back to the function signature ---
+// --- MODIFIED: The function now returns a 'status' in all paths ---
 export async function saveItineraryDay(prevState: any, formData: FormData) {
   const supabase = createServerActionClient({ cookies });
 
@@ -20,44 +20,28 @@ export async function saveItineraryDay(prevState: any, formData: FormData) {
     location_2_id: z.string().optional(),
   });
 
-  // This line will now work correctly
   const validatedFields = schema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
-    console.error('Invalid data:', validatedFields.error.flatten().fieldErrors);
-    // Return a state object on failure
-    return { message: 'Invalid data submitted.' };
+    return { status: 'error', message: 'Invalid data.' };
   }
 
-  // --- HANDLE BOTH LOCATION IDs ---
-  const location1Id = validatedFields.data.location_1_id
-    ? Number(validatedFields.data.location_1_id)
-    : null;
-  const location2Id = validatedFields.data.location_2_id
-    ? Number(validatedFields.data.location_2_id)
-    : null;
-
+  const location1Id = validatedFields.data.location_1_id ? Number(validatedFields.data.location_1_id) : null;
+  const location2Id = validatedFields.data.location_2_id ? Number(validatedFields.data.location_2_id) : null;
   const { trip_id, date, notes } = validatedFields.data;
 
   const { error } = await supabase.from('itinerary_days').upsert(
-    {
-      trip_id,
-      date,
-      notes,
-      location_1_id: location1Id,
-      location_2_id: location2Id, // <-- ADD THIS
-    },
+    { trip_id, date, notes, location_1_id: location1Id, location_2_id: location2Id },
     { onConflict: 'trip_id, date' }
   );
 
   if (error) {
     console.error('Upsert Error:', error);
-    return { message: `Failed to save day: ${error.message}` };
+    return { status: 'error', message: `Failed to save day: ${error.message}` };
   }
 
   revalidatePath(`/trip/${trip_id}`);
-  // Return the success message for the useEffect hook
-  return { message: 'Saved!' };
+  return { status: 'success', message: 'Saved!' };
 }
 
 
