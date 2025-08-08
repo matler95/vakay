@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Pencil } from 'lucide-react';
+import { BulkActionPanel } from './BulkActionPanel';
 
 type Trip = Database['public']['Tables']['trips']['Row'];
 type ItineraryDay = Database['public']['Tables']['itinerary_days']['Row'];
@@ -54,17 +55,36 @@ export function ItineraryView({ trip, itineraryDays, locations }: ItineraryViewP
     });
   };
 
+  const handleBulkUpdate = (updates: Partial<ItineraryDay>) => {
+    setDraftItinerary(prevDraft => {
+      const newDraft = new Map(prevDraft);
+      selectedDates.forEach(dateStr => {
+        const currentDay = newDraft.get(dateStr) || {
+          date: dateStr, trip_id: trip.id, id: -1,
+          location_1_id: null, location_2_id: null, notes: null, summary: null
+        };
+        newDraft.set(dateStr, { ...currentDay, ...updates });
+      });
+      return newDraft;
+    });
+  };
+
+  // --- NEW: Function to clear the selection set ---
+  const handleClearSelection = () => {
+    setSelectedDates(new Set());
+  };
+
   const handleCancel = () => {
-    // On cancel, discard changes by resetting the draft to the original data
     const initialMap = new Map(itineraryDays.map(day => [day.date, day]));
     setDraftItinerary(initialMap);
-    setSelectedDates(new Set()); // Clear selection
-    setIsEditing(false); // Exit edit mode
+    setSelectedDates(new Set()); // <-- Reset checkboxes on cancel
+    setIsEditing(false);
   };
   
   const handleSave = () => {
     // We will build the save logic in a later step!
     console.log("Saving changes...", draftItinerary);
+    setSelectedDates(new Set()); // <-- Reset checkboxes on save
     setIsEditing(false);
   };
 
@@ -98,7 +118,14 @@ export function ItineraryView({ trip, itineraryDays, locations }: ItineraryViewP
         )}
       </div>
       
-      {/* ... We will add the bulk action panel here later ... */}
+      {isEditing && selectedDates.size > 1 && (
+        <BulkActionPanel
+          selectedCount={selectedDates.size}
+          locations={locations}
+          onBulkUpdate={handleBulkUpdate}
+          onClearSelection={handleClearSelection} // <-- Pass the new function
+        />
+      )}
 
       <div className="grid grid-cols-7 gap-px rounded-lg bg-gray-200 text-sm shadow-md overflow-hidden">
         {weekdays.map((day) => <div key={day} className="bg-white py-2 text-center font-semibold text-gray-600">{day}</div>)}
@@ -106,7 +133,6 @@ export function ItineraryView({ trip, itineraryDays, locations }: ItineraryViewP
 
         {tripDates.map((date) => {
           const dateStr = date.toISOString().split('T')[0];
-          // --- IMPORTANT: The DayCard now reads from our DRAFT state ---
           const dayData = draftItinerary.get(dateStr);
           
           return (
@@ -117,9 +143,9 @@ export function ItineraryView({ trip, itineraryDays, locations }: ItineraryViewP
               locations={locations}
               isEditingCalendar={isEditing}
               isSelected={selectedDates.has(dateStr)}
-              selectionCount={selectedDates.size} // <-- Pass down selection count
+              selectionCount={selectedDates.size}
               onSelectDate={() => handleSelectDate(dateStr)}
-              onUpdateDraft={handleUpdateDraft} // <-- Pass down the update function
+              onUpdateDraft={handleUpdateDraft}
             />
           );
         })}

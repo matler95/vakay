@@ -1,4 +1,3 @@
-// src/app/trip/[tripId]/_components/DayCard.tsx
 'use client';
 
 import { Database } from '@/types/database.types';
@@ -59,10 +58,9 @@ export function DayCard({ date, dayData, locations, isEditingCalendar, isSelecte
       )}
       
       <div onClick={isEditingCalendar ? onSelectDate : undefined} className="flex-grow">
-        <time dateTime={date.toISOString()} className={`font-bold text-right ${textColor}`}>{date.getUTCDate()}</time>
+        <time dateTime={date.toISOString()} className={`font-bold text-left ${textColor}`}>{date.getUTCDate()}</time>
         
         {isOnlySelected ? (
-          // --- EDIT MODE FOR A SINGLE CARD ---
           <div className="mt-1 space-y-2" onClick={(e) => e.stopPropagation()}>
             <Select
               name="location_1_id"
@@ -101,7 +99,6 @@ export function DayCard({ date, dayData, locations, isEditingCalendar, isSelecte
             </label>
           </div>
         ) : (
-          // --- VIEW MODE ---
           <div className="mt-1 text-xs">
             {location1 && <p className={`font-semibold ${textColor}`}>{location1.name}</p>}
             {location2 && <p className={`text-sm ${textColor}`}>→ {location2.name}</p>}

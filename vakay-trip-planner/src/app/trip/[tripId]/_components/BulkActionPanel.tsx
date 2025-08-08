@@ -5,46 +5,52 @@ import { Database } from '@/types/database.types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { bulkUpdateDays } from '../actions';
 
 type Location = Database['public']['Tables']['locations']['Row'];
 
 interface BulkActionPanelProps {
-  tripId: string;
-  selectedDates: Set<string>;
+  selectedCount: number;
   locations: Location[];
+  onBulkUpdate: (updates: { location_1_id: number | null }) => void;
+  onClearSelection: () => void; // <-- New prop to clear selection
 }
 
-export function BulkActionPanel({ tripId, selectedDates, locations }: BulkActionPanelProps) {
-  // Don't render the panel if no dates are selected
-  if (selectedDates.size === 0) {
+export function BulkActionPanel({ selectedCount, locations, onBulkUpdate, onClearSelection }: BulkActionPanelProps) {
+  if (selectedCount === 0) {
     return null;
   }
 
-  // Bind the server action with the necessary data that isn't in the form
-  const actionWithData = bulkUpdateDays.bind(null, tripId, Array.from(selectedDates));
+  // This function now directly calls the update prop
+  const handleLocationChange = (value: string) => {
+    onBulkUpdate({
+      location_1_id: value ? Number(value) : null
+    });
+  };
 
   return (
-    <Card className="mb-4 bg-gray-50">
+    <Card className="mb-4 bg-gray-100 border-dashed">
       <CardContent className="p-4">
-        <form action={actionWithData} className="flex items-center gap-4">
-          <p className="text-sm font-medium">
-            {selectedDates.size} day(s) selected
-          </p>
-          <Select name="location_id">
-            <SelectTrigger className="w-[180px] bg-white">
-              <SelectValue placeholder="Set location..." />
-            </SelectTrigger>
-            <SelectContent>
-              {locations.map((loc) => (
-                <SelectItem key={loc.id} value={loc.id.toString()}>
-                  {loc.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button type="submit">Apply</Button>
-        </form>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <p className="text-sm font-medium">
+              {selectedCount} days selected
+            </p>
+            <Select onValueChange={handleLocationChange}>
+              <SelectTrigger className="w-[200px] bg-white">
+                <SelectValue placeholder="Set location for all..." />
+              </SelectTrigger>
+              <SelectContent>
+                {locations.map((loc) => (
+                  <SelectItem key={loc.id} value={loc.id.toString()}>
+                    {loc.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          {/* This button now clears the selection */}
+          <Button variant="ghost" onClick={onClearSelection}>OK</Button>
+        </div>
       </CardContent>
     </Card>
   );
