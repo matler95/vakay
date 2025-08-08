@@ -3,6 +3,7 @@
 
 import { supabase } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button'; // Import the new Button
 
 export default function LogoutButton() {
   const router = useRouter();
@@ -13,11 +14,9 @@ export default function LogoutButton() {
   };
 
   return (
-    <button
-      onClick={handleLogout}
-      className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded"
-    >
+    // Replace the old button with the new one
+    <Button variant="outline" size="sm" onClick={handleLogout}>
       Logout
-    </button>
+    </Button>
   );
 }
