@@ -193,3 +193,56 @@ export async function updateTripDetails(prevState: any, formData: FormData) {
   revalidatePath('/dashboard'); // Also revalidate the dashboard
   return { status: 'success', message: 'Trip details updated!' };
 }
+
+// --- ADD THIS NEW FUNCTION ---
+export async function bulkUpdateDays(
+  tripId: string,
+  selectedDates: string[],
+  formData: FormData
+) {
+  const supabase = createServerActionClient({ cookies });
+
+  // 1. Get the location ID from the form
+  const locationId = formData.get('location_id')
+    ? Number(formData.get('location_id'))
+    : null;
+
+  // 2. Security Check: Verify the user is an admin of this trip
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return; // Should be blocked by middleware, but good practice
+
+  const { data: participant } = await supabase
+    .from('trip_participants')
+    .select('role')
+    .eq('trip_id', tripId)
+    .eq('user_id', user.id)
+    .single();
+
+  if (participant?.role !== 'admin') {
+    console.error('Permission denied: User is not an admin for this trip.');
+    return;
+  }
+
+  // 3. Prepare the data for the bulk upsert
+  const dataToUpsert = selectedDates.map((date) => ({
+    trip_id: tripId,
+    date: date,
+    location_1_id: locationId,
+    // Note: This action could be expanded to also set notes, transfers, etc.
+  }));
+
+  // 4. Perform the bulk operation
+  if (dataToUpsert.length > 0) {
+    const { error } = await supabase
+      .from('itinerary_days')
+      .upsert(dataToUpsert, { onConflict: 'trip_id, date' });
+    
+    if (error) {
+      console.error('Bulk Upsert Error:', error);
+      return;
+    }
+  }
+
+  // 5. Revalidate the path to refresh the UI
+  revalidatePath(`/trip/${tripId}`);
+}
