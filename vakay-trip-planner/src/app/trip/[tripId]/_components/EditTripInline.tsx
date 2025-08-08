@@ -24,7 +24,7 @@ export function EditTripInline({ trip, userRole }: EditTripInlineProps) {
     // If we are editing, show the form and pass a function to close it
     return (
       <div className="my-6 rounded-lg border bg-white p-6 shadow-sm">
-        <EditTripForm trip={trip} onCancel={() => setIsEditing(false)} />
+        <EditTripForm trip={trip} onCancel={() => setIsEditing(false)} onSuccess={() => setIsEditing(false)} />
       </div>
     );
   }

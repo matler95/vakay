@@ -2,6 +2,7 @@
 'use client';
 
 import { Database } from '@/types/database.types';
+import { useEffect } from 'react'; // Make sure useEffect is imported
 import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { updateTripDetails } from '../actions';
@@ -10,7 +11,8 @@ type Trip = Database['public']['Tables']['trips']['Row'];
 
 interface EditTripFormProps {
   trip: Trip;
-  onCancel: () => void; // It now requires an onCancel function
+  onCancel: () => void;
+  onSuccess: () => void; // <-- Add new onSuccess prop
 }
 
 function SubmitButton() {
@@ -23,8 +25,22 @@ function SubmitButton() {
 }
 
 // This component is now just the form itself.
-export function EditTripForm({ trip, onCancel }: EditTripFormProps) {
-  const [state, formAction] = useActionState(updateTripDetails, { message: '' });
+export function EditTripForm({ trip, onCancel, onSuccess }: EditTripFormProps) {
+  // The state now expects a 'status' field
+  const [state, formAction] = useActionState(updateTripDetails, { message: '', status: '' });
+
+  // --- NEW: useEffect to handle auto-closing ---
+  useEffect(() => {
+    if (state.status === 'success') {
+      // Wait a moment so the user can see the success message, then close.
+      const timer = setTimeout(() => {
+        onSuccess();
+      }, 1000); // 1 second delay
+      
+      // Cleanup the timer if the component unmounts
+      return () => clearTimeout(timer);
+    }
+  }, [state, onSuccess]);
 
   return (
     <div>
@@ -54,7 +70,10 @@ export function EditTripForm({ trip, onCancel }: EditTripFormProps) {
         </div>
 
         <div className="flex items-center justify-end gap-4">
-          {state.message && <p className="text-sm text-gray-600">{state.message}</p>}
+          {/* Show a message based on the status */}
+          {state.message && (
+             <p className={`text-sm ${state.status === 'error' ? 'text-red-600' : 'text-green-600'}`}>{state.message}</p>
+          )}
           <button type="button" onClick={onCancel} className="text-sm font-semibold text-gray-700">Cancel</button>
           <SubmitButton />
         </div>

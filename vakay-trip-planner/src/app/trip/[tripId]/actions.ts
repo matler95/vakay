@@ -172,7 +172,7 @@ export async function updateTripDetails(prevState: any, formData: FormData) {
   const validatedFields = schema.safeParse(Object.fromEntries(formData.entries()));
 
   if (!validatedFields.success) {
-    return { message: 'Invalid data provided.' };
+    return { status: 'error', message: 'Invalid data provided.' };
   }
   
   // --- FIX: Separate the ID from the data we want to update ---
@@ -192,19 +192,20 @@ export async function updateTripDetails(prevState: any, formData: FormData) {
     .single();
 
   if (participant?.role !== 'admin') {
-    return { message: 'You do not have permission to edit this trip.' };
+    return { status: 'error', message: 'You do not have permission to edit this trip.' };
   }
   
   // --- FIX: Use the separated data for the update ---
   const { error } = await supabase
     .from('trips')
-    .update(updateData) // Use the object without trip_id
-    .eq('id', trip_id);  // Use trip_id to find the correct row
+    .update(updateData)
+    .eq('id', trip_id);
   
   if (error) {
-    return { message: `Failed to update trip: ${error.message}` };
+    return { status: 'error', message: `Failed to update trip: ${error.message}` };
   }
   
   revalidatePath(`/trip/${trip_id}`);
-  return { message: 'Trip details updated successfully!' };
+  revalidatePath('/dashboard'); // Also revalidate the dashboard
+  return { status: 'success', message: 'Trip details updated!' };
 }

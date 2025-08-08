@@ -16,10 +16,6 @@ export function EditTripModal({ trip, userRole }: EditTripModalProps) {
   const [isOpen, setIsOpen] = useState(false);
   const handleClose = () => setIsOpen(false);
 
-  // The check for the user's role is now implicitly handled by the parent
-  // component (TripList), which only renders this modal for admins.
-  // We don't need to check it again here.
-
   return (
     <>
       <button onClick={() => setIsOpen(true)} className="text-sm font-medium text-gray-600 hover:text-gray-900">
@@ -29,8 +25,8 @@ export function EditTripModal({ trip, userRole }: EditTripModalProps) {
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="relative w-full max-w-lg rounded-lg bg-white p-6 shadow-xl">
-            {/* The props now match what EditTripForm expects */}
-            <EditTripForm trip={trip} onCancel={handleClose} />
+            {/* --- MODIFIED: Pass both onCancel and onSuccess --- */}
+            <EditTripForm trip={trip} onCancel={handleClose} onSuccess={handleClose} />
           </div>
         </div>
       )}
